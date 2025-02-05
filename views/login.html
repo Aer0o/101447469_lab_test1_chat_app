@@ -17,40 +17,40 @@
     <p>Don't have an account? <a href="signup.html">Sign up</a></p>
 
     <script>
-            $("#loginForm").submit(function(e) {
-        e.preventDefault();
+        $("#loginForm").submit(function(e) {
+    e.preventDefault();
 
-        // Get form values
-        const username = $("#username").val().trim();
-        const password = $("#password").val().trim();
+    const username = $("#username").val().trim();
+    const password = $("#password").val().trim();
 
-        console.log("Logging in:", { username, password }); // Debugging
+    console.log("Logging in:", { username, password }); // Debugging
 
-        if (!username || !password) {
-            alert("All fields are required!");
-            return;
+    if (!username || !password) {
+        alert("All fields are required!");
+        return;
+    }
+
+    $.ajax({
+        url: "http://localhost:5000/api/auth/login",  
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ username, password }),
+        success: function(response) {
+            console.log("Login Success:", response); // Debugging
+
+            // Store session in localStorage
+            localStorage.setItem("token", response.token);
+            localStorage.setItem("username", response.user.username);
+
+            // Redirect to chat page
+            window.location.href = "chat.html";
+        },
+        error: function(xhr) {
+            alert("Error: " + (xhr.responseJSON?.message || "Something went wrong"));
         }
-
-        $.ajax({
-            url: "/api/auth/login",
-            type: "POST",
-            contentType: "application/json",
-            data: JSON.stringify({ username, password }),
-            success: function(response) {
-                console.log("Login Success:", response); // Debugging
-
-                // Store session in localStorage
-                localStorage.setItem("token", response.token);
-                localStorage.setItem("username", response.user.username);
-
-                // Redirect to chat page
-                window.location.href = "chat.html";
-            },
-            error: function(xhr) {
-                alert("Error: " + (xhr.responseJSON?.message || "Login failed"));
-            }
-        });
     });
+});
+
 
     </script>
 </body>
