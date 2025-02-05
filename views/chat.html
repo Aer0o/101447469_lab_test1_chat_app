@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="container mt-5">
+    <h2>Chat Room</h2>
+    <p>Logged in as: <span id="currentUser"></span></p>
+    
+    <label for="roomSelect">Choose a room:</label>
+    <select id="roomSelect" class="form-control mb-3">
+        <option value="devops">DevOps</option>
+        <option value="cloud computing">Cloud Computing</option>
+        <option value="covid19">Covid19</option>
+        <option value="sports">Sports</option>
+        <option value="nodeJS">NodeJS</option>
+    </select>
+    
+    <button id="joinRoom" class="btn btn-success">Join Room</button>
+    <button id="leaveRoom" class="btn btn-danger d-none">Leave Room</button>
+
+    <div class="chat-box mt-3">
+        <div id="messages" class="border p-3" style="height: 300px; overflow-y: scroll;"></div>
+        <p id="typingIndicator" class="text-muted"></p>
+        <input type="text" id="message" class="form-control mt-2" placeholder="Type a message...">
+        <button id="sendMessage" class="btn btn-primary mt-2">Send</button>
+    </div>
+
+    <button id="logout" class="btn btn-warning mt-3">Logout</button>
+
+    <script>
+        const socket = io();
+        let username = localStorage.getItem("username");
+        let room = "";
+
+        $("#currentUser").text(username);
+
+        $("#joinRoom").click(function() {
+            room = $("#roomSelect").val();
+            socket.emit("joinRoom", room);
+            $("#joinRoom").addClass("d-none");
+            $("#leaveRoom").removeClass("d-none");
+            $("#messages").empty();
+        });
+
+        $("#leaveRoom").click(function() {
+            socket.emit("leaveRoom", room);
+            $("#joinRoom").removeClass("d-none");
+            $("#leaveRoom").addClass("d-none");
+            room = "";
+        });
+
+        $("#message").on("input", function() {
+            socket.emit("typing", { username, room });
+        });
+
+        $("#sendMessage").click(function() {
+            const message = $("#message").val();
+            if (message && room) {
+                socket.emit("chatMessage", { from_user: username, room, message });
+                $("#messages").append(`<p><strong>You:</strong> ${message}</p>`);
+                $("#message").val("");
+            }
+        });
+
+        socket.on("message", (data) => {
+            if (data.from_user !== username) {
+                $("#messages").append(`<p><strong>${data.from_user}:</strong> ${data.message}</p>`);
+            }
+        });
+
+        socket.on("userTyping", (user) => {
+            $("#typingIndicator").text(`${user} is typing...`);
+            setTimeout(() => $("#typingIndicator").text(""), 2000);
+        });
+
+        $("#logout").click(function() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("username");
+            window.location.href = "login.html";
+        });
+    </script>
+</body>
+</html>
